@@ -113,7 +113,7 @@ class _RootsRitesTimesClockState extends State<RootsRitesTimesClock> {
             ),
             Expanded(
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 10),
+                padding: EdgeInsets.symmetric(horizontal: 15),
                 child: dateTimeStructure.visual == null ? Container() : Container(
                   width: double.infinity,
                   height: double.infinity,
@@ -122,12 +122,20 @@ class _RootsRitesTimesClockState extends State<RootsRitesTimesClock> {
               ),
             ),
             Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.all(10.0),
+                    padding: const EdgeInsets.all(15.0),
                     child: Text('${dateTimeStructure.num} of ${dateTimeStructure.ofNum}', style: _textStyleM),
-              )],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(15.0),
+                    child: Text('< ${(dateTimeStructure.ofNum == 24
+                        ? dateTimeStructure.ofNum - 1
+                        : dateTimeStructure.ofNum
+                    ) - dateTimeStructure.num + 1} to go', style: _textStyleM),
+                  ),
+                ],
             ),
           ],
         ),
