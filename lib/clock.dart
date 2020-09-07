@@ -47,14 +47,14 @@ class _RootsRitesTimesClockState extends State<RootsRitesTimesClock> {
   Map<_themeElement, ColorSwatch>  _theme;
   TextStyle _textStyleL;
   TextStyle _textStyleM;
-  DateTime _dateTime = DateTime.now();
+  DateTime _dateTime; // to display, whether it's current or manually selected
   Timer _timer;
 
   @override
   void initState() {
     super.initState();
     widget.model.addListener(_updateModel);
-    _updateTime();
+    _dateTime = widget.model.dateTimeFixed;
     _updateModel();
   }
 
@@ -76,6 +76,7 @@ class _RootsRitesTimesClockState extends State<RootsRitesTimesClock> {
   }
 
   void _updateModel() {
+    _updateTime();
     setState(() {
       // Cause the clock to rebuild when the model changes.
     });
@@ -83,19 +84,20 @@ class _RootsRitesTimesClockState extends State<RootsRitesTimesClock> {
 
   void _updateTime() {
     setState(() {
-      _dateTime = DateTime.now();
-      _timer = Timer(
-          Duration(hours: 1) - Duration(minutes: _dateTime.minute),
-          _updateTime
-      );
-      // Update once per minute. If you want to update every second, use the
-      // following code.
-//      _timer = Timer(
-//        Duration(minutes: 1) -
-//            Duration(seconds: _dateTime.second) -
-//            Duration(milliseconds: _dateTime.millisecond),
-//        _updateTime,
-//      );
+      if (widget.model.dateTimeFixed == null) {
+        _dateTime = DateTime.now();
+      } else {
+        Duration diff = _dateTime.difference(widget.model.dateTimeFixed);
+        if (diff.inHours.abs() >= 1) {
+          _dateTime = widget.model.dateTimeFixed;
+          _updateTime();
+        }
+      }
+      Duration _time = Duration(hours: 1) -
+          Duration(minutes: _dateTime.minute) -
+          Duration(seconds: _dateTime.second);
+      print('next update in ${_time.inMinutes} minutes');
+      _timer = Timer(_time, _updateTime);
     });
   }
 

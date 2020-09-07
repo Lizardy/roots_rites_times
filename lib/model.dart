@@ -16,4 +16,12 @@ class ClockModel extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // manually selected date and time different from the current moment
+  DateTime _dateTimeFixed;
+  get dateTimeFixed => _dateTimeFixed;
+  set dateTimeFixed(DateTime dateTime) {
+    _dateTimeFixed = dateTime;
+    notifyListeners();
+  }
 }

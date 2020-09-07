@@ -4,5 +4,14 @@ import 'customizer.dart';
 import 'model.dart';
 
 void main() {
-  runApp(ClockCustomizer((ClockModel model) => RootsRitesTimesClock(model)));
+  runApp(MaterialApp(
+      title: 'Roots Rites Times',
+      color: Colors.grey[700],
+      theme: ThemeData.light(),
+      darkTheme: ThemeData.dark(),
+      themeMode: ThemeMode.light,
+      debugShowCheckedModeBanner: false,
+      home: ClockCustomizer((ClockModel model) => RootsRitesTimesClock(model)),
+  )
+  );
 }
