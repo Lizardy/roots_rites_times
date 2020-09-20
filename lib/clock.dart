@@ -43,7 +43,7 @@ class RootsRitesTimesClock extends StatefulWidget {
   _RootsRitesTimesClockState createState() => _RootsRitesTimesClockState();
 }
 
-class _RootsRitesTimesClockState extends State<RootsRitesTimesClock> {
+class _RootsRitesTimesClockState extends State<RootsRitesTimesClock> with WidgetsBindingObserver{
   Map<_themeElement, ColorSwatch>  _theme;
   TextStyle _textStyleL;
   TextStyle _textStyleM;
@@ -53,6 +53,7 @@ class _RootsRitesTimesClockState extends State<RootsRitesTimesClock> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     widget.model.addListener(_updateModel);
     _dateTime = widget.model.dateTimeFixed;
     _updateModel();
@@ -68,10 +69,20 @@ class _RootsRitesTimesClockState extends State<RootsRitesTimesClock> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      setState(() {
+        // Cause the clock to rebuild when the app is resumed after inactivity.
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _timer?.cancel();
     widget.model.removeListener(_updateModel);
     widget.model.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
