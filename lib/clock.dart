@@ -268,10 +268,12 @@ class TimeOfDayPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     const hourInDegrees = 30;
     const halfDay = 12;
-    const angleSweepInRadians = (hourInDegrees-90) * pi / 360.0;
+    const angleSweepInRadians = (hourInDegrees - 90) * pi / 360.0;
+    const offsetHBetween = 2;
     final num radius = min(size.width / 4, size.height / 2);
-    final centerAM = Offset(radius, radius);
-    final centerPM = Offset(radius * 3, radius);
+    final num offsetH = (size.width - radius * 4 - offsetHBetween) / 2;
+    final centerAM = Offset(radius + offsetH, radius);
+    final centerPM = Offset(radius * 3 + offsetH + offsetHBetween, radius);
     final paintStroke = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0
