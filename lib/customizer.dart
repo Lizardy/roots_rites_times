@@ -36,9 +36,12 @@ class _ClockCustomizerState extends State<ClockCustomizer> {
   void _handleModelChange() => setState(() {});
 
   Future<void> _selectDate(BuildContext context) async {
+    DateTime dt = _model.dateTimeFixed == null
+        ? DateTime.now()
+        : _model.dateTimeFixed;
     final DateTime selected = await showDatePicker(
         context: context,
-        initialDate: _model.dateTimeFixed ?? DateTime.now(),
+        initialDate: dt,
         firstDate: DateTime(1200),
         lastDate: DateTime(2200),
     );
@@ -48,33 +51,30 @@ class _ClockCustomizerState extends State<ClockCustomizer> {
           selected.year,
           selected.month,
           selected.day,
-          selected.hour + (_model.dateTimeFixed == null
-              ? DateTime.now().hour
-              : _model.dateTimeFixed.hour
-          ),
-          selected.minute + (_model.dateTimeFixed == null
-              ? DateTime.now().minute
-              : _model.dateTimeFixed.minute
-          ),
+          selected.hour + dt.hour,
+          selected.minute + dt.minute,
         );
       });
     }
   }
 
   Future<void> _selectTime(BuildContext context) async {
+    final DateTime dt = _model.dateTimeFixed == null
+        ? DateTime.now()
+        : _model.dateTimeFixed;
     final TimeOfDay selected = await showTimePicker(
         context: context,
         initialTime: TimeOfDay(
-            hour: _model.dateTimeFixed.hour,
-            minute: _model.dateTimeFixed.minute,
+            hour: dt.hour,
+            minute: dt.minute,
         ),
     );
     if (selected != null && selected != _model.dateTimeFixed) {
       setState(() {
         _model.dateTimeFixed = DateTime(
-          _model.dateTimeFixed.year,
-          _model.dateTimeFixed.month,
-          _model.dateTimeFixed.day,
+          dt.year,
+          dt.month,
+          dt.day,
           selected.hour,
           selected.minute,
         );
