@@ -71,9 +71,7 @@ class _RootsRitesTimesClockState extends State<RootsRitesTimesClock> with Widget
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      setState(() {
-        // Cause the clock to rebuild when the app is resumed after inactivity.
-      });
+      _updateTime();
     }
   }
 
