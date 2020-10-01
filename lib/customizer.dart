@@ -1,9 +1,30 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:rootsritestimes/clock.dart';
+import 'package:rootsritestimes/theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'model.dart';
 
+enum Prefs { manuallySetDark }
+enum MenuItems { switchTheme, autoSwitchTheme }
+
 /// Returns a clock [Widget] with [ClockModel].
 typedef Widget ClockBuilder(ClockModel model);
+
+class App extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final _themeManager = Provider.of<ThemeManager>(context);
+    return MaterialApp(
+      title: 'Roots Rites Times',
+      theme: _themeManager.getTheme(),
+      debugShowCheckedModeBanner: false,
+      home: ClockCustomizer((ClockModel model) => RootsRitesTimesClock(model)),
+    );
+  }
+}
 
 /// Wrapper for clock widget to allow for customizations.
 class ClockCustomizer extends StatefulWidget {
@@ -16,8 +37,6 @@ class ClockCustomizer extends StatefulWidget {
 
 class _ClockCustomizerState extends State<ClockCustomizer> {
   final _model = ClockModel();
-  ThemeMode _themeMode = ThemeMode.light;
-  bool _configButtonShown = false;
 
   @override
   void initState() {
@@ -33,7 +52,16 @@ class _ClockCustomizerState extends State<ClockCustomizer> {
     super.dispose();
   }
 
-  void _handleModelChange() => setState(() {});
+  void _handleModelChange() {
+    final themeManager = Provider.of<ThemeManager>(context, listen: false);
+    SharedPreferences.getInstance().then((prefs) {
+      themeManager.updateTheme(
+          prefs.getBool(describeEnum(Prefs.manuallySetDark)),
+          _model.isDarkTimeOfDay
+      );
+      setState(() {});
+    });
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     DateTime dt = _model.dateTimeFixed == null
@@ -142,22 +170,66 @@ class _ClockCustomizerState extends State<ClockCustomizer> {
     );
   }
 
+  Widget popupMenu(SharedPreferences prefs) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    return PopupMenuButton(
+      onSelected: (selected) {
+        switch (selected) {
+          case MenuItems.switchTheme:
+            themeManager.switchTheme();
+            prefs.setBool(
+                describeEnum(Prefs.manuallySetDark),
+                themeManager.isThemeDark()
+            );
+            break;
+          case MenuItems.autoSwitchTheme:
+            prefs.setBool(
+                describeEnum(Prefs.manuallySetDark),
+                null
+            );
+            themeManager.updateTheme(null, _model.isDarkTimeOfDay);
+            break;
+        }
+      },
+      itemBuilder: (BuildContext context) =>
+      [
+        PopupMenuItem(
+          value: MenuItems.switchTheme,
+          child: Text('Switch color scheme'),
+        ),
+        PopupMenuItem(
+          value: MenuItems.autoSwitchTheme,
+          child: Text('Auto-switch color scheme'),
+          enabled: prefs.getBool(describeEnum(Prefs.manuallySetDark)) != null
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: widget._clock(_model),
-        appBar: AppBar(
-          backgroundColor: Colors.grey[700],
-          iconTheme: IconThemeData(color: Colors.amberAccent),
-          title: Row(children: [
-            timePicker(),
-            datePicker(),
-            Spacer(),
-            dayBack(),
-            today(),
-            dayForward(),
-          ]),
-        ),
-      );
+      body: widget._clock(_model),
+      appBar: AppBar(
+        title: Row(children: [
+          timePicker(),
+          datePicker(),
+          Spacer(),
+          dayBack(),
+          today(),
+          dayForward(),
+        ]),
+        actions: [
+          FutureBuilder(
+            future: SharedPreferences.getInstance(),
+            builder: (BuildContext context, AsyncSnapshot snapshot) {
+              return snapshot.hasData
+                  ? popupMenu(snapshot.data)
+                  : Container();
+            },
+          )
+        ],
+      ),
+    );
   }
 }

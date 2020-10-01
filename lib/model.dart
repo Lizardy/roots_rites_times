@@ -24,4 +24,14 @@ class ClockModel extends ChangeNotifier {
     _dateTimeFixed = dateTime;
     notifyListeners();
   }
+
+  // whether it's dark or light time of day, to determine the theme lightness
+  bool _isDarkTimeOfDay = true;
+  get isDarkTimeOfDay => _isDarkTimeOfDay;
+  set isDarkTimeOfDay(bool isDarkTimeOfDay) {
+    if (_isDarkTimeOfDay != isDarkTimeOfDay) {
+      _isDarkTimeOfDay = isDarkTimeOfDay;
+      notifyListeners();
+    }
+  }
 }

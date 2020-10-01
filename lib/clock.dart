@@ -5,34 +5,9 @@ import 'package:intl/intl.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:rootsritestimes/dt_helpers.dart';
 import 'package:rootsritestimes/model.dart';
-
-enum _themeElement {
-  gradientStart,
-  gradientEnd,
-  cardBackground,
-  text,
-  accent,
-  faded,
-}
-
-final Map<_themeElement, ColorSwatch> _lightTheme = {
-  _themeElement.gradientStart: Colors.orange,
-  _themeElement.gradientEnd: Colors.amber,
-  _themeElement.cardBackground: Colors.grey, //[100].withOpacity(0.7)
-  _themeElement.text: Colors.brown, //[900]
-  _themeElement.accent: Colors.amberAccent,
-  _themeElement.faded: Colors.orange, //gradient to calculate
-};
-
-final Map<_themeElement, ColorSwatch> _darkTheme = {
-  _themeElement.gradientStart: Colors.deepPurple,
-  _themeElement.gradientEnd: Colors.indigo,
-  _themeElement.cardBackground: Colors.grey, //[100].withOpacity(0.7)
-  _themeElement.text: Colors.indigo, //[900]
-  _themeElement.accent: Colors.blueAccent,
-  _themeElement.faded: Colors.indigo, //gradient to calculate
-};
+import 'package:rootsritestimes/theme.dart';
 
 class RootsRitesTimesClock extends StatefulWidget {
   const RootsRitesTimesClock(this.model);
@@ -44,10 +19,8 @@ class RootsRitesTimesClock extends StatefulWidget {
 }
 
 class _RootsRitesTimesClockState extends State<RootsRitesTimesClock> with WidgetsBindingObserver{
-  Map<_themeElement, ColorSwatch>  _theme;
-  TextStyle _textStyleL;
-  TextStyle _textStyleM;
-  DateTime _dateTime; // to display, whether it's current or manually selected
+  /// DateTime to display, can be current or manually selected
+  DateTime _dateTime;
   Timer _timer;
 
   @override
@@ -102,6 +75,7 @@ class _RootsRitesTimesClockState extends State<RootsRitesTimesClock> with Widget
           _updateTime();
         }
       }
+      widget.model.isDarkTimeOfDay = isDarkTimeOfDay(_dateTime.hour);
       Duration _time = Duration(hours: 1) -
           Duration(minutes: _dateTime.minute) -
           Duration(seconds: _dateTime.second);
@@ -113,14 +87,14 @@ class _RootsRitesTimesClockState extends State<RootsRitesTimesClock> with Widget
   Widget _dateTimeAspect(DateTimeStructure dateTimeStructure) {
     num _cardH = MediaQuery.of(context).size.height / 2.3;
     return Card(
-      color: _theme[_themeElement.cardBackground][100].withOpacity(0.7),
+      color: Theme.of(context).cardColor.withOpacity(0.6),
       child: Container(
         height: dateTimeStructure.visual == null ? _cardH / 2 : _cardH,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             ListTile(
-              title: Text(dateTimeStructure.str ?? dateTimeStructure.num.toString(), style: _textStyleL),
+              title: Text(dateTimeStructure.str ?? dateTimeStructure.num.toString()),
               subtitle: Text(dateTimeStructure.title),
             ),
             Expanded(
@@ -138,14 +112,14 @@ class _RootsRitesTimesClockState extends State<RootsRitesTimesClock> with Widget
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(15.0),
-                    child: Text('${dateTimeStructure.num} of ${dateTimeStructure.ofNum}', style: _textStyleM),
+                    child: Text('${dateTimeStructure.num} of ${dateTimeStructure.ofNum}'),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(15.0),
                     child: Text('< ${(dateTimeStructure.ofNum == 24
                         ? dateTimeStructure.ofNum - 1
                         : dateTimeStructure.ofNum
-                    ) - dateTimeStructure.num + 1} to go', style: _textStyleM),
+                    ) - dateTimeStructure.num + 1} to go'),
                   ),
                 ],
             ),
@@ -157,25 +131,18 @@ class _RootsRitesTimesClockState extends State<RootsRitesTimesClock> with Widget
 
   @override
   Widget build(BuildContext context) {
-    _theme = Theme.of(context).brightness == Brightness.light
-        ? _lightTheme
-        : _darkTheme;
-    _textStyleL = TextStyle(color: _theme[_themeElement.text], fontSize: 22.0);
-    _textStyleM = TextStyle(color: _theme[_themeElement.text], fontSize: 18.0);
-//    final hour =
-//        DateFormat(widget.model.is24HourFormat ? 'HH' : 'hh').format(_dateTime);
-    final DateTimeBreakdown _dateTimeBreakdown = DateTimeBreakdown(_dateTime, _theme);
+    final DateTimeBreakdown _dateTimeBreakdown = DateTimeBreakdown(_dateTime, context);
 
     return Container(
         decoration: BoxDecoration(
             gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            _theme[_themeElement.gradientStart],
-            _theme[_themeElement.gradientEnd]
-          ],
-        )),
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Theme.of(context).backgroundColor,
+                Theme.of(context).scaffoldBackgroundColor,
+              ],
+            )),
         child: ListView.builder(
             itemCount: _dateTimeBreakdown.components.length,
             itemBuilder: (context, i){
@@ -186,50 +153,30 @@ class _RootsRitesTimesClockState extends State<RootsRitesTimesClock> with Widget
   }
 }
 
-enum TimeOfDay { night, morning, afternoon, evening }
-
 class DateTimeBreakdown {
   List<DateTimeStructure> components = [];
 
-  static TimeOfDay timeOfDay(int hour) {
-    if (hour >= 22 || hour < 5) return TimeOfDay.night;
-    else if (hour >= 5 && hour < 12) return TimeOfDay.morning;
-    else if (hour >= 12 && hour < 18) return TimeOfDay.afternoon;
-    else if (hour >= 18 && hour < 22) return TimeOfDay.evening;
-    else throw Exception('unable to determine time of the day');
-  }
-
-  static bool isLeapYear(int year) => year % 4 == 0 && year % 100 != 0
-      || year % 400 == 0;
-
-  static int daysPerMonth(int month, int year) {
-    if (month == 2)
-      return isLeapYear(year) ? 29 : 28;
-    else
-      return [1, 3, 5, 7, 8, 10, 12].contains(month) ? 31 : 30;
-  }
-
-  DateTimeBreakdown(DateTime dateTime, Map<_themeElement, Color> theme) {
+  DateTimeBreakdown(DateTime dateTime, BuildContext context) {
     components.add(DateTimeStructure(
         dateTime.hour,
         24,
         'time of the day',
-        str: describeEnum(timeOfDay(dateTime.hour)),
-        visual: TimeOfDayPainter(theme, dateTime.hour),
+        str: describeEnum(partOfDay(dateTime.hour)),
+        visual: TimeOfDayPainter(context, dateTime.hour),
     ));
     components.add(DateTimeStructure(
         dateTime.weekday,
         DateTime.daysPerWeek,
         'day of the week',
         str: DateFormat('EEEE').format(dateTime),
-        visual: DayOfWeekPainter(theme, dateTime.weekday),
+        visual: DayOfWeekPainter(context, dateTime.weekday),
     ));
     components.add(DateTimeStructure(
         dateTime.day,
         daysPerMonth(dateTime.month, dateTime.year),
         'day of the month',
         visual: DayOfMonthPainter(
-            theme,
+            context,
             dateTime.day,
             // dateTime.subtract(Duration(days: dateTime.day)).weekday,
             DateTime(dateTime.year, dateTime.month, 1).weekday,
@@ -241,7 +188,7 @@ class DateTimeBreakdown {
         DateTime.monthsPerYear,
         'month of the year',
         str: DateFormat('MMMM').format(dateTime),
-        visual: MonthOfYearPainter(theme, dateTime.month)
+        visual: MonthOfYearPainter(context, dateTime.month)
     ));
   }
 }
@@ -257,10 +204,10 @@ class DateTimeStructure {
 }
 
 class TimeOfDayPainter extends CustomPainter {
-  final Map<_themeElement, ColorSwatch> _theme;
+  final BuildContext _context;
   final int _currentHour;
 
-  const TimeOfDayPainter(this._theme, this._currentHour);
+  const TimeOfDayPainter(this._context, this._currentHour);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -275,25 +222,27 @@ class TimeOfDayPainter extends CustomPainter {
     final paintStroke = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0
-      ..color = _theme[_themeElement.text][900];
+      ..color = Theme.of(_context).cursorColor;
     final paintAccent = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 6.0
-      ..color = _theme[_themeElement.accent];
+      ..color = Theme.of(_context).accentColor;
     // draw the base circles
     canvas.drawCircle(centerAM, radius, paintStroke);
     canvas.drawCircle(centerPM, radius, paintStroke);
-    // fill the past and current hours with gradient (the closer to current, the brighter)
+    // fill the past and current hours with gradient
+    // (the closer to current, the brighter)
     Offset centerCurrent = _currentHour < halfDay ? centerAM : centerPM;
     Offset centerPast = _currentHour >= halfDay ? centerAM : null;
     int currentHour12 = _currentHour >= halfDay ? _currentHour - 12 : _currentHour;
     num angleInDegrees;
     num angleInRadians;
-    int colorIndex = 700;
+    int colorIndex = 800;
+    MaterialColor primarySwatch = getSwatch(Theme.of(_context).primaryColor);
     Paint paintFill = Paint()
       ..style = PaintingStyle.fill
       ..strokeWidth = 6.0
-      ..color = _theme[_themeElement.faded][colorIndex];
+      ..color = primarySwatch[colorIndex];
     for (int i = currentHour12; i >= 0; i--) {
       angleInDegrees = 30 * i;
       angleInRadians = (angleInDegrees-90) * pi / 180.0;
@@ -308,7 +257,7 @@ class TimeOfDayPainter extends CustomPainter {
       paintFill = Paint()
         ..style = PaintingStyle.fill
         ..strokeWidth = 6.0
-        ..color = _theme[_themeElement.faded][colorIndex];
+        ..color = primarySwatch[colorIndex];
     }
     if (centerPast != null) {
       canvas.drawCircle(centerPast, radius, paintFill);
@@ -331,27 +280,28 @@ class TimeOfDayPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(TimeOfDayPainter oldDelegate) =>
-      _currentHour != oldDelegate._currentHour || _theme != oldDelegate._theme;
+      _currentHour != oldDelegate._currentHour;
 }
 
 class DayOfWeekPainter extends CustomPainter {
-  final Map<_themeElement, ColorSwatch> _theme;
+  final BuildContext _context;
   final int _currentDay;
 
-  const DayOfWeekPainter(this._theme, this._currentDay);
+  const DayOfWeekPainter(this._context, this._currentDay);
 
   @override
   void paint(Canvas canvas, Size size) {
     final num squareSize = size.width / DateTime.daysPerWeek;
     final num top = size.height / 2 - squareSize / 2;
+    MaterialColor primarySwatch = getSwatch(Theme.of(_context).primaryColor);
     final paintStroke = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0
-      ..color = _theme[_themeElement.text][900];
+      ..color = Theme.of(_context).cursorColor;
     final paintAccent = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 6.0
-      ..color = _theme[_themeElement.accent];
+      ..color = Theme.of(_context).accentColor;
     for (int i = 0; i < DateTime.daysPerWeek; i++) {
       canvas.drawRect(
         Rect.fromLTWH(i * squareSize, top, squareSize, squareSize),
@@ -364,7 +314,7 @@ class DayOfWeekPainter extends CustomPainter {
           Rect.fromLTWH(i * squareSize, top, squareSize, squareSize),
           Paint()
             ..style = PaintingStyle.fill
-            ..color = _theme[_themeElement.faded][_fadedIndex],
+            ..color = primarySwatch[_fadedIndex],
         );
       }
     }
@@ -377,16 +327,16 @@ class DayOfWeekPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(DayOfWeekPainter oldDelegate) =>
-      _currentDay != oldDelegate._currentDay || _theme != oldDelegate._theme;
+      _currentDay != oldDelegate._currentDay;
 }
 
 class DayOfMonthPainter extends CustomPainter {
-  final Map<_themeElement, ColorSwatch> _theme;
+  final BuildContext _context;
   final int _currentDay;
   final int _firstDay; // weekday of the first day of month
   final int _lastDay; // last day of month
 
-  const DayOfMonthPainter(this._theme, this._currentDay, this._firstDay, this._lastDay);
+  const DayOfMonthPainter(this._context, this._currentDay, this._firstDay, this._lastDay);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -397,7 +347,7 @@ class DayOfMonthPainter extends CustomPainter {
     final paintStroke = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0
-      ..color = _theme[_themeElement.text][900];
+      ..color = Theme.of(_context).cursorColor;
     final paintSpace = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0
@@ -405,7 +355,8 @@ class DayOfMonthPainter extends CustomPainter {
     final paintAccent = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 6.0
-      ..color = _theme[_themeElement.accent];
+      ..color = Theme.of(_context).accentColor;
+    MaterialColor primarySwatch = getSwatch(Theme.of(_context).primaryColor);
     int fadedIndex = 600;
     int dayOfMonth = 1;
     num fromTop, fromLeft;
@@ -429,7 +380,7 @@ class DayOfMonthPainter extends CustomPainter {
               Rect.fromLTWH(fromLeft, fromTop, squareSize, squareSize),
               Paint()
                 ..style = PaintingStyle.fill
-                ..color = _theme[_themeElement.faded][fadedIndex -
+                ..color = primarySwatch[fadedIndex -
                     (((_currentDay - 1 + _firstDay - 1) / numRows).floor()
                         - 1 - week) * 100],
             );
@@ -451,15 +402,14 @@ class DayOfMonthPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(DayOfMonthPainter oldDelegate) =>
-      _currentDay != oldDelegate._currentDay || _theme != oldDelegate._theme ||
-          _firstDay != oldDelegate._firstDay || _lastDay != oldDelegate._lastDay;
+      _firstDay != oldDelegate._firstDay || _lastDay != oldDelegate._lastDay;
 }
 
 class MonthOfYearPainter extends CustomPainter {
-  final Map<_themeElement, ColorSwatch> _theme;
+  final BuildContext _context;
   final int _currentMonth;
 
-  const MonthOfYearPainter(this._theme, this._currentMonth);
+  const MonthOfYearPainter(this._context, this._currentMonth);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -469,11 +419,12 @@ class MonthOfYearPainter extends CustomPainter {
     final paintStroke = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0
-      ..color = _theme[_themeElement.text][900];
+      ..color = Theme.of(_context).cursorColor;
     final paintAccent = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 6.0
-      ..color = _theme[_themeElement.accent];
+      ..color = Theme.of(_context).accentColor;
+    MaterialColor primarySwatch = getSwatch(Theme.of(_context).primaryColor);
     for (int i = 0, j = DateTime.monthsPerYear - 1; i < DateTime.monthsPerYear; i++, j--) {
       num fromTop = i < DateTime.monthsPerYear/2 ? top : top+squareSize;
       num fromLeft = i < DateTime.monthsPerYear/2 ? i * squareSize : j * squareSize;
@@ -488,7 +439,7 @@ class MonthOfYearPainter extends CustomPainter {
           Rect.fromLTWH(fromLeft, fromTop, squareSize, squareSize),
           Paint()
             ..style = PaintingStyle.fill
-            ..color = _theme[_themeElement.faded][_fadedIndex],
+            ..color = primarySwatch[_fadedIndex],
         );
       }
     }
@@ -507,5 +458,5 @@ class MonthOfYearPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(MonthOfYearPainter oldDelegate) =>
-      _currentMonth != oldDelegate._currentMonth || _theme != oldDelegate._theme;
+      _currentMonth != oldDelegate._currentMonth;
 }
