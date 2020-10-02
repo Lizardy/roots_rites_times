@@ -15,10 +15,10 @@ final darkTheme = ThemeData(
     textStyle: TextStyle(color: Colors.white),
   ),
   cardColor: Colors.grey[700],
-  backgroundColor: Colors.indigo,
-  scaffoldBackgroundColor: Colors.indigoAccent,
+  backgroundColor: Colors.grey[800],
+  scaffoldBackgroundColor: Colors.blueGrey,
   accentColor: Colors.blueAccent,
-  cursorColor: Colors.white30
+  cursorColor: Colors.blueGrey[300]
 );
 
 final lightTheme = ThemeData(
@@ -35,11 +35,11 @@ final lightTheme = ThemeData(
     color: Colors.orange[50],
     textStyle: TextStyle(color: Colors.black),
   ),
-  cardColor: Colors.grey[100],
-  backgroundColor: Colors.orangeAccent,
-  scaffoldBackgroundColor: Colors.orange,
+  cardColor: Colors.orange[50],
+  backgroundColor: Colors.orange[50],
+  scaffoldBackgroundColor: Colors.amber[300],
   accentColor: Colors.amberAccent,
-  cursorColor: Colors.brown[900],
+  cursorColor: Colors.brown[700],
 );
 
 class ThemeManager with ChangeNotifier {
