@@ -86,8 +86,12 @@ class _RootsRitesTimesClockState extends State<RootsRitesTimesClock> with Widget
 
   Widget _dateTimeAspect(DateTimeStructure dateTimeStructure) {
     num _cardH = MediaQuery.of(context).size.height / 2.3;
+    ThemeData _theme = Theme.of(context);
     return Card(
-      color: Theme.of(context).cardColor.withOpacity(0.6),
+      color: _theme.cardColor.withOpacity(_theme.brightness == Brightness.dark
+          ? 0.2
+          : 0.6
+      ),
       child: Container(
         height: dateTimeStructure.visual == null ? _cardH / 2 : _cardH,
         child: Column(
