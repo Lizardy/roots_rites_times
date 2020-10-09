@@ -161,6 +161,8 @@ class DateTimeBreakdown {
   List<DateTimeStructure> components = [];
 
   DateTimeBreakdown(DateTime dateTime, BuildContext context) {
+    final int currentWeekOfYear = weekOfYear(dateTime);
+    final int weeksInTheYear = weeksInYear(dateTime);
     components.add(DateTimeStructure(
         dateTime.hour,
         24,
@@ -174,6 +176,13 @@ class DateTimeBreakdown {
         'day of the week',
         str: DateFormat('EEEE').format(dateTime),
         visual: DayOfWeekPainter(context, dateTime.weekday),
+    ));
+    components.add(DateTimeStructure(
+        currentWeekOfYear,
+        weeksInTheYear,
+        'week of the year',
+        str: currentWeekOfYear.toString(),
+        visual: WeekOfYearPainter(context, currentWeekOfYear, weeksInTheYear)
     ));
     components.add(DateTimeStructure(
         dateTime.day,
@@ -332,6 +341,86 @@ class DayOfWeekPainter extends CustomPainter {
   @override
   bool shouldRepaint(DayOfWeekPainter oldDelegate) =>
       _currentDay != oldDelegate._currentDay;
+}
+
+class WeekOfYearPainter extends CustomPainter {
+  final BuildContext _context;
+  final int _currentWeek;
+  final int _weeksInCurrentYear;
+
+  const WeekOfYearPainter(this._context, this._currentWeek, this._weeksInCurrentYear);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final num height = size.height / 4;
+    final int numPerRow = (_weeksInCurrentYear / 2).ceil();
+    final num width = size.width / numPerRow;
+    final num top = size.height / 2 - height;
+    final paintStroke = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0
+      ..color = Theme.of(_context).cursorColor;
+    final paintAccent = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 6.0
+      ..color = Theme.of(_context).accentColor;
+    MaterialColor primarySwatch = getSwatch(Theme.of(_context).primaryColor);
+    for (int i = 0, j = _weeksInCurrentYear-1; i < _weeksInCurrentYear; i++, j--) {
+      num fromTop, fromLeft;
+      if (numPerRow % 2 == 0) {
+        // 52 weeks in a year, 26 elements per row
+        if (i < numPerRow) {
+          fromTop = top;
+          fromLeft = i * width;
+        } else {
+          fromTop = top + height;
+          fromLeft = (i - numPerRow) * width;
+        }
+      } else {
+        // 53 weeks in a year, 26 elements per row + appendix
+        if (i < numPerRow - 1) {
+          fromTop = top;
+          fromLeft = i * width;
+        } else if (i == numPerRow - 1) {
+          fromTop = top + height / 2;
+          fromLeft = i * width;
+        } else {
+          fromTop = top + height;
+          fromLeft = j * width;
+        }
+      }
+      canvas.drawRect(
+        Rect.fromLTWH(fromLeft, fromTop, width, height),
+        paintStroke,
+      );
+      if (i < _currentWeek) {
+        // every 6 elements change shade, 9 shades total, 6*9=54 (53,52)
+        int fadedIndex = 1000 - ((_currentWeek - i) / 6).ceil() * 100;
+        canvas.drawRect(
+          Rect.fromLTWH(fromLeft, fromTop, width, height),
+          Paint()
+            ..style = PaintingStyle.fill
+            ..color = primarySwatch[fadedIndex],
+        );
+      }
+    }
+    // draw an accent square to mark the current value on top of all
+    num fromTop = _currentWeek <= _weeksInCurrentYear / 2
+        ? top
+        : top + height;
+    num fromLeft = _currentWeek <= _weeksInCurrentYear / 2
+        ? (_currentWeek - 1) * width
+        : (_weeksInCurrentYear - _currentWeek) * width;
+    canvas.drawRect(
+      Rect.fromLTWH(fromLeft, fromTop, width, height),
+      paintAccent,
+    );
+  }
+
+  @override
+  bool shouldRepaint(WeekOfYearPainter oldDelegate) =>
+      _currentWeek != oldDelegate._currentWeek
+          || _weeksInCurrentYear != oldDelegate._weeksInCurrentYear;
 }
 
 class DayOfMonthPainter extends CustomPainter {
