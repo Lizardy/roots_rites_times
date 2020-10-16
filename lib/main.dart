@@ -5,7 +5,7 @@ import 'customizer.dart';
 
 void main() {
   runApp(ChangeNotifierProvider<ThemeManager>(
-    create: (context) => ThemeManager(darkTheme),
+    create: (context) => ThemeManager.initial(),
     child: App(),
   ));
 }

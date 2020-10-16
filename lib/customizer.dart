@@ -55,10 +55,7 @@ class _ClockCustomizerState extends State<ClockCustomizer> {
   void _handleModelChange() {
     final themeManager = Provider.of<ThemeManager>(context, listen: false);
     SharedPreferences.getInstance().then((prefs) {
-      themeManager.updateTheme(
-          prefs.getBool(describeEnum(Prefs.manuallySetDark)),
-          _model.isDarkTimeOfDay
-      );
+      themeManager.updateTheme(_model.isDarkTimeOfDay);
       setState(() {});
     });
   }
@@ -187,7 +184,7 @@ class _ClockCustomizerState extends State<ClockCustomizer> {
                 describeEnum(Prefs.manuallySetDark),
                 null
             );
-            themeManager.updateTheme(null, _model.isDarkTimeOfDay);
+            themeManager.updateTheme(_model.isDarkTimeOfDay);
             break;
         }
       },

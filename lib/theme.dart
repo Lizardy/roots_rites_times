@@ -1,4 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:rootsritestimes/customizer.dart';
+import 'package:rootsritestimes/dt_helpers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final darkTheme = ThemeData(
   brightness: Brightness.dark,
@@ -46,20 +50,26 @@ class ThemeManager with ChangeNotifier {
   ThemeData _themeData;
 
   ThemeManager(this._themeData);
+  ThemeManager.initial() {
+    updateTheme(isDarkTimeOfDay(DateTime.now().hour));
+  }
 
   getTheme() => _themeData;
   setTheme(ThemeData theme) {
     _themeData = theme;
     notifyListeners();
   }
-  void updateTheme(bool manuallySetDark, bool isDarkTimeOfDay) {
-    if (manuallySetDark == true) {
-      setTheme(darkTheme);
-    } else if (manuallySetDark == false) {
-      setTheme(lightTheme);
-    } else if (manuallySetDark == null) {
-      setTheme(isDarkTimeOfDay ? darkTheme : lightTheme);
-    }
+  void updateTheme(bool isDarkTimeOfDay) {
+    SharedPreferences.getInstance().then((prefs) {
+      bool manuallySetDark = prefs.getBool(describeEnum(Prefs.manuallySetDark));
+      if (manuallySetDark == true) {
+        setTheme(darkTheme);
+      } else if (manuallySetDark == false) {
+        setTheme(lightTheme);
+      } else if (manuallySetDark == null) {
+        setTheme(isDarkTimeOfDay ? darkTheme : lightTheme);
+      }
+    });
   }
   void switchTheme() {
     if (_themeData.brightness == Brightness.light)
