@@ -59,9 +59,6 @@ class _RootsRitesTimesClockState extends State<RootsRitesTimesClock> with Widget
 
   void _updateModel() {
     _updateTime();
-    setState(() {
-      // Cause the clock to rebuild when the model changes.
-    });
   }
 
   void _updateTime() {
