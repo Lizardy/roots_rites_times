@@ -7,8 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'model.dart';
 
-enum Prefs { manuallySetDark }
-enum MenuItems { switchTheme, autoSwitchTheme }
+enum Prefs { manuallySetDark, optimisticToGo }
+enum MenuItems { switchTheme, autoSwitchTheme, nPlusToGo , lessThanNToGo}
 
 /// Returns a clock [Widget] with [ClockModel].
 typedef Widget ClockBuilder(ClockModel model);
@@ -186,10 +186,26 @@ class _ClockCustomizerState extends State<ClockCustomizer> {
             );
             themeManager.updateTheme(_model.isDarkTimeOfDay);
             break;
+          case MenuItems.nPlusToGo:
+            setState(() {
+              prefs.setBool(
+                  describeEnum(Prefs.optimisticToGo),
+                  true
+              );
+            });
+            break;
+          case MenuItems.lessThanNToGo:
+            setState(() {
+              prefs.setBool(
+                  describeEnum(Prefs.optimisticToGo),
+                  false
+              );
+            });
+            break;
         }
       },
       itemBuilder: (BuildContext context) =>
-      [
+      <PopupMenuEntry<MenuItems>>[
         PopupMenuItem(
           value: MenuItems.switchTheme,
           child: Text('Switch color scheme'),
@@ -198,6 +214,17 @@ class _ClockCustomizerState extends State<ClockCustomizer> {
           value: MenuItems.autoSwitchTheme,
           child: Text('Auto-switch color scheme'),
           enabled: prefs.getBool(describeEnum(Prefs.manuallySetDark)) != null
+        ),
+        PopupMenuDivider(),
+        PopupMenuItem(
+          value: MenuItems.nPlusToGo,
+          child: Text('"Optimistic" remaining time'),
+          enabled: prefs.getBool(describeEnum(Prefs.optimisticToGo)) == false
+        ),
+        PopupMenuItem(
+          value: MenuItems.lessThanNToGo,
+          child: Text('"Pessimistic" remaining time'),
+          enabled: prefs.getBool(describeEnum(Prefs.optimisticToGo)) == true
         ),
       ],
     );

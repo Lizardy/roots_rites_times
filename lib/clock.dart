@@ -5,9 +5,11 @@ import 'package:intl/intl.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:rootsritestimes/customizer.dart';
 import 'package:rootsritestimes/dt_helpers.dart';
 import 'package:rootsritestimes/model.dart';
 import 'package:rootsritestimes/theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RootsRitesTimesClock extends StatefulWidget {
   const RootsRitesTimesClock(this.model);
@@ -81,30 +83,36 @@ class _RootsRitesTimesClockState extends State<RootsRitesTimesClock> with Widget
     });
   }
 
-  Widget _dateTimeAspect(DateTimeStructure dateTimeStructure) {
+  Widget _dateTimeAspect(DateTimeStructure dtStructure, SharedPreferences prefs) {
     num _cardH = MediaQuery.of(context).size.height / 2.3;
     ThemeData _theme = Theme.of(context);
+    bool _optimistic = prefs.getBool(describeEnum(Prefs.optimisticToGo));
+    if (_optimistic == null) {
+      _optimistic = true;
+      prefs.setBool(describeEnum(Prefs.optimisticToGo), true);
+    }
+
     return Card(
       color: _theme.cardColor.withOpacity(_theme.brightness == Brightness.dark
           ? 0.2
           : 0.6
       ),
       child: Container(
-        height: dateTimeStructure.visual == null ? _cardH / 2 : _cardH,
+        height: dtStructure.visual == null ? _cardH / 2 : _cardH,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             ListTile(
-              title: Text(dateTimeStructure.str ?? dateTimeStructure.num.toString()),
-              subtitle: Text(dateTimeStructure.title),
+              title: Text(dtStructure.str ?? dtStructure.num.toString()),
+              subtitle: Text(dtStructure.title),
             ),
             Expanded(
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 15),
-                child: dateTimeStructure.visual == null ? Container() : Container(
+                child: dtStructure.visual == null ? Container() : Container(
                   width: double.infinity,
                   height: double.infinity,
-                  child: CustomPaint(painter: dateTimeStructure.visual),
+                  child: CustomPaint(painter: dtStructure.visual),
                 ),
               ),
             ),
@@ -113,14 +121,15 @@ class _RootsRitesTimesClockState extends State<RootsRitesTimesClock> with Widget
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(15.0),
-                    child: Text('${dateTimeStructure.num} of ${dateTimeStructure.ofNum}'),
+                    child: Text('${dtStructure.num} of ${dtStructure.ofNum}'),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(15.0),
-                    child: Text('< ${(dateTimeStructure.ofNum == 24
-                        ? dateTimeStructure.ofNum - 1
-                        : dateTimeStructure.ofNum
-                    ) - dateTimeStructure.num + 1} to go'),
+                    child: Text(_optimistic
+                        ? dtStructure.nPlusToGo() == 0
+                          ? '~${dtStructure.nPlusToGo()} to go'
+                          : '${dtStructure.nPlusToGo()}+ to go'
+                        : '<${dtStructure.lessThanNToGo()} to go'),
                   ),
                 ],
             ),
@@ -144,11 +153,20 @@ class _RootsRitesTimesClockState extends State<RootsRitesTimesClock> with Widget
                 Theme.of(context).scaffoldBackgroundColor,
               ],
             )),
-        child: ListView.builder(
-            itemCount: _dateTimeBreakdown.components.length,
-            itemBuilder: (context, i){
-              return _dateTimeAspect(_dateTimeBreakdown.components[i]);
-            }
+        child: FutureBuilder(
+          future: SharedPreferences.getInstance(),
+          builder: (BuildContext context, AsyncSnapshot snapshot) {
+            return snapshot.hasData
+                ? ListView.builder(
+                  itemCount: _dateTimeBreakdown.components.length,
+                  itemBuilder: (context, i){
+                    return _dateTimeAspect(
+                        _dateTimeBreakdown.components[i],
+                        snapshot.data,
+                    );
+                  })
+                : LinearProgressIndicator(value: null);
+          },
         ),
     );
   }
@@ -211,6 +229,9 @@ class DateTimeStructure {
   final CustomPainter visual;
 
   const DateTimeStructure(this.num, this.ofNum, this.title, {this.str, this.visual});
+
+  int lessThanNToGo() => (ofNum == 24 ? ofNum - 1 : ofNum) - num + 1;
+  int nPlusToGo() => (ofNum == 24 ? ofNum - 1 : ofNum) - num;
 }
 
 class TimeOfDayPainter extends CustomPainter {
